@@ -239,6 +239,58 @@ function hbaseprotoc_rebuild
 
 ######################################
 
+add_test_type hbaselogs
+
+## @description  hbaselogs file filter
+## @audience     private
+## @stability    evolving
+## @param        filename
+function hbaselogs_filefilter
+{
+  local filename=$1
+
+  if [[ ${filename} =~ \.java$ ]]; then
+    add_test hbaselogs
+  fi
+}
+
+## @description  hbaselogs patch file check
+## @audience     private
+## @stability    evolving
+## @param        filename
+function hbaselogs_patchfile
+{
+  local patchfile=$1
+  local -A entries
+  local result
+
+  if [[ "${BUILDMODE}" = full ]]; then
+    return 0
+  fi
+
+  verify_needed_test hbaselogs
+  if [[ $? == 0 ]]; then
+    return 0
+  fi
+
+  big_console_header "Checking for changed log entries"
+
+  start_clock
+
+  for level in debug error fatal info trace warn; do
+    entries[${level}]=$(${GREP} "LOG.${level}" "${patchfile}")
+
+    if [[ ${entries[${level}]} -gt 0 ]]; then
+      add_vote_table +1 hbaselogs "" "Patch changed ${result} ${level} log entries"
+    fi
+  done
+
+  return 0
+}
+
+
+######################################
+
 add_test_type hbaseanti
 
 ## @description  hbaseanti file filter
